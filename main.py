@@ -116,14 +116,14 @@ def cmd_upload(args):
 
 def cmd_rename(args):
 
+    print("INFO: authenticating")
+    glance = glance_session_from_args(args)
+
     # The Python API is not fully compatible with v2 yet,
     # e.g. update() is spotty, so let's use v1.
-
-    print("INFO: authenticating")
-    glance = glance_session_from_args(args, 1)
-
+    glance1 = glance_session_from_args(args, 1)
     print("INFO: renaming to", args.name)
-    glance.images.update(args.image_id, name=args.name)
+    glance1.images.update(args.image_id, name=args.name)
 
     if args.unique:
         print("INFO: deleting other images of the same name")
