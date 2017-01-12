@@ -87,33 +87,32 @@ def cmd_upload(args):
 
             # We only support sharing with tenants under the same
             # username/password.
+
+            # XXX: Consider making this part optional since it assumes
+            # we have access to the other tenants.
             accept_image_in_tenants(new_img.id, args.share_with, args.auth_url,
                                     args.username, args.password)
+
+        if args.name:
+            # The Python API is not fully compatible with v2 yet,
+            # e.g. update() is spotty, so let's use v1.
+            glance1 = glance_session_from_args(args, 1)
+            print("INFO: renaming to", args.name)
+            glance1.images.update(new_img.id, name=args.name)
+
+        if args.image_id_file:
+            print("INFO: write image id to file", args.image_id_file)
+            with open(args.image_id_file, 'w') as f:
+                f.write(new_img.id)
 
     except Exception as e:
         print("INFO: deleting new image")
         glance.images.delete(new_img.id)
         raise e
 
-    # OK, we successfully uploaded the image and shared it
-    # with other tenants, now let's bring it home and set
-    # its name and make it unique if needed.
-
-    if args.name:
-
-        # The Python API is not fully compatible with v2 yet,
-        # e.g. update() is spotty, so let's use v1.
-        glance1 = glance_session_from_args(args, 1)
-        print("INFO: renaming to", args.name)
-        glance1.images.update(new_img.id, name=args.name)
-        if args.unique:
-            print("INFO: deleting other images of the same name")
-            make_image_unique_by_name(glance, new_img.id, args.name)
-
-    if args.image_id_file:
-        with open(args.image_id_file, 'w') as f:
-            f.write(new_img.id)
-
+    if args.unique:
+        print("INFO: deleting other images of the same name")
+        make_image_unique_by_name(glance, new_img.id, args.name)
 
 def cmd_rename(args):
 
