@@ -9,6 +9,7 @@ import sys
 import gzip
 import argparse
 import requests
+import subprocess
 
 from keystoneauth1 import loading
 from keystoneauth1 import session
@@ -53,6 +54,11 @@ def parse_args():
     rename.add_argument('--unique', action='store_true',
                         help='delete all other images of the same name')
     rename.set_defaults(func=cmd_rename)
+
+    rename = subparsers.add_parser('glance', help='call glance directly')
+    rename.add_argument('args', nargs=argparse.REMAINDER, default=[],
+                        help="pass these arguments")
+    rename.set_defaults(func=cmd_glance)
 
     return parser.parse_args()
 
@@ -114,6 +120,7 @@ def cmd_upload(args):
         print("INFO: deleting other images of the same name")
         make_image_unique_by_name(glance, new_img.id, args.name)
 
+
 def cmd_rename(args):
 
     print("INFO: authenticating")
@@ -159,7 +166,7 @@ def find_images_by_name(glance, name):
 def upload_image_from_url(glance, img, image_url):
 
     resp = requests.get(image_url, stream=True)
-    if resp.status_code != requests.codes.ok: # pylint: disable=no-member
+    if resp.status_code != requests.codes.ok:  # pylint: disable=no-member
         raise Exception("Received HTTP %d" % resp.status_code)
 
     f_in = resp.raw
@@ -187,6 +194,10 @@ def make_image_unique_by_name(glance, img_id, name):
         # the one that originally uploaded the image(s).
         # Otherwise, we'd get a 403.
         glance.images.delete(img.id)
+
+
+def cmd_glance(args):
+    subprocess.run(['glance'] + args.args, check=True)
 
 
 if __name__ == "__main__":
