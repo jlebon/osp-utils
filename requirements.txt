@@ -1,1 +1,1 @@
-python-glanceclient
+python-glanceclient==2.5.0
