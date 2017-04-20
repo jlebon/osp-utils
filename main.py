@@ -7,6 +7,7 @@
 import os
 import sys
 import gzip
+import lzma
 import argparse
 import requests
 import subprocess
@@ -176,6 +177,8 @@ def upload_image_from_url(glance, img, image_url):
 
     if image_url.endswith('.gz'):
         f_in = gzip.GzipFile(fileobj=f_in, mode='rb')
+    elif image_url.endswith('.xz'):
+        f_in = lzma.open(f_in)
 
     glance.images.upload(img, f_in)
 
