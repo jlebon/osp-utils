@@ -72,11 +72,12 @@ def cmd_upload(args):
     print("INFO: creating image")
     new_img = glance.images.create(disk_format='qcow2',
                                    container_format='bare')
-    # https://bugzilla.redhat.com/show_bug.cgi?id=1572944
-    glance.images.update(new_img.id, hw_rng_model='virtio')
     print("INFO: new image ID is", new_img.id)
 
     try:
+        # https://bugzilla.redhat.com/show_bug.cgi?id=1572944
+        glance.images.update(new_img.id, hw_rng_model='virtio')
+
         print("INFO: uploading image")
         upload_image_from_url(glance, new_img.id, args.url)
 
