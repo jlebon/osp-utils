@@ -13,7 +13,7 @@ import argparse
 import requests
 import subprocess
 
-from keystoneauth1 import loading
+from keystoneauth1.identity import v3
 from keystoneauth1 import session
 from glanceclient import Client
 
@@ -32,7 +32,9 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--auth-url', default=os.environ.get('OS_AUTH_URL'))
-    parser.add_argument('--tenant-id', default=os.environ.get('OS_TENANT_ID'))
+    parser.add_argument('--project-id', default=os.environ.get('OS_PROJECT_ID'))
+    parser.add_argument('--project-domain-id',
+                        default=os.environ.get('OS_PROJECT_DOMAIN_ID'))
     parser.add_argument('--username', default=os.environ.get('OS_USERNAME'))
     parser.add_argument('--password', default=os.environ.get('OS_PASSWORD'))
     subparsers = parser.add_subparsers(dest='cmd', title='subcommands')
@@ -99,7 +101,8 @@ def cmd_upload(args):
 
             # XXX: Consider making this part optional since it assumes
             # we have access to the other tenants.
-            accept_image_in_tenants(new_img.id, args.share_with, args.auth_url,
+            accept_image_in_tenants(new_img.id, args.share_with,
+                                    args.project_domain_id, args.auth_url,
                                     args.username, args.password)
 
         if args.name:
@@ -140,12 +143,13 @@ def cmd_rename(args):
         make_image_unique_by_name(glance, args.image_id, args.name)
 
 
-def glance_session(auth_url, tenant_id, username, password, version=2):
-    loader = loading.get_plugin_loader('password')
-    auth = loader.load_from_options(auth_url=auth_url,
-                                    tenant_id=tenant_id,
-                                    username=username,
-                                    password=password)
+def glance_session(auth_url, project_id, project_domain_id, username, password, version=2):
+    auth = v3.Password(auth_url=auth_url,
+                       project_id=project_id,
+                       username=username,
+                       password=password,
+                       project_domain_id=project_domain_id,
+                       user_domain_name='redhat.com')
     mysession = session.Session(auth=auth)
 
     # the Python API is not fully compatible with v2 yet,
@@ -154,7 +158,8 @@ def glance_session(auth_url, tenant_id, username, password, version=2):
 
 
 def glance_session_from_args(args, version=2):
-    return glance_session(args.auth_url, args.tenant_id,
+    return glance_session(args.auth_url, args.project_id,
+                          args.project_domain_id,
                           args.username, args.password, version)
 
 
@@ -187,9 +192,11 @@ def upload_image_from_url(glance, img, image_url):
     glance.images.upload(img, f_in)
 
 
-def accept_image_in_tenants(img, tenants, auth_url, username, password):
-    for tenant in tenants:
-        glance = glance_session(auth_url, tenant, username, password)
+def accept_image_in_tenants(img, projects, project_domain_id, auth_url,
+                            username, password):
+    for project in projects:
+        glance = glance_session(auth_url, project, project_domain_id,
+                                username, password)
         glance.image_members.update(img, tenant, 'accepted')
 
 

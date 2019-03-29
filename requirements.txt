@@ -1,1 +1,2 @@
-python-glanceclient==2.5.0
+python-glanceclient==2.16.0
+keystoneauth1==3.13.1

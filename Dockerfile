@@ -1,4 +1,4 @@
-FROM fedora:24
+FROM fedora:29
 MAINTAINER Jonathan Lebon <jlebon@redhat.com>
 
 RUN dnf install -y \
